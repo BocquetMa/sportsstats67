@@ -106,11 +106,11 @@ class RoutineController extends Controller
             'name' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
             'is_active' => 'boolean',
-            'exercises' => 'required|array',
-            'exercises.*.exercise_id' => 'required|exists:exercises,id',
-            'exercises.*.sets_count' => 'required|integer|min:1|max:10',
+            'exercises' => 'nullable|array',
+            'exercises.*.exercise_id' => 'required_with:exercises|exists:exercises,id',
+            'exercises.*.sets_count' => 'required_with:exercises|integer|min:1|max:10',
             'exercises.*.target_reps' => 'nullable|integer|min:1',
-            'exercises.*.rest_time' => 'required|integer|min:30|max:600',
+            'exercises.*.rest_time' => 'required_with:exercises|integer|min:30|max:600',
         ]);
 
         DB::transaction(function () use ($routine, $dayOfWeek, $validated) {
@@ -124,9 +124,9 @@ class RoutineController extends Controller
                 ]
             );
 
-            // Synchroniser les exercices
+            // Synchroniser les exercices (vide = effacer tous les exercices du jour)
             $exercisesData = [];
-            foreach ($validated['exercises'] as $index => $exercise) {
+            foreach ($validated['exercises'] ?? [] as $index => $exercise) {
                 $exercisesData[$exercise['exercise_id']] = [
                     'sets_count' => $exercise['sets_count'],
                     'target_reps' => $exercise['target_reps'] ?? null,
