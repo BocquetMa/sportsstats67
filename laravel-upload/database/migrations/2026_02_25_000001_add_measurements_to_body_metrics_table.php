@@ -9,12 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('body_metrics', function (Blueprint $table) {
-            $table->decimal('chest', 5, 1)->nullable()->after('objective');
-            $table->decimal('waist', 5, 1)->nullable()->after('chest');
-            $table->decimal('hips', 5, 1)->nullable()->after('waist');
-            $table->decimal('arms', 5, 1)->nullable()->after('hips');
-            $table->decimal('thighs', 5, 1)->nullable()->after('arms');
-            $table->decimal('calves', 5, 1)->nullable()->after('thighs');
+            foreach (['chest', 'waist', 'hips', 'arms', 'thighs', 'calves'] as $column) {
+                if (!Schema::hasColumn('body_metrics', $column)) {
+                    $table->decimal($column, 5, 1)->nullable();
+                }
+            }
         });
     }
 

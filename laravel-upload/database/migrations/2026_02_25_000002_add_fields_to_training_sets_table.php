@@ -9,8 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('training_sets', function (Blueprint $table) {
-            $table->integer('set_number')->nullable()->after('exercise_id');
-            $table->timestamp('completed_at')->nullable()->after('rest_time');
+            if (!Schema::hasColumn('training_sets', 'set_number')) {
+                $table->integer('set_number')->nullable();
+            }
+            if (!Schema::hasColumn('training_sets', 'completed_at')) {
+                $table->timestamp('completed_at')->nullable();
+            }
         });
     }
 
