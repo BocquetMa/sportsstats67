@@ -1,7 +1,7 @@
 <x-app-layout>
 @php
-    // Pré-charger les exercices de chaque jour pour Alpine.js
     $allDayExercises = [];
+    $allDayNames     = [];
     foreach ($days as $dayKey => $dayName) {
         $routineDay = $routine->days->firstWhere('day_of_week', $dayKey);
         $allDayExercises[$dayKey] = $routineDay
@@ -13,11 +13,12 @@
                 'rest_time'   => $ex->pivot->rest_time ?? 90,
             ])->values()->toArray()
             : [];
+        $allDayNames[$dayKey] = $routineDay?->name ?? '';
     }
 @endphp
 
     <div class="min-h-screen bg-[#08090a] text-white pb-24"
-         x-data="routineEditor({{ json_encode($allDayExercises) }})">
+         x-data="routineEditor({{ json_encode($allDayExercises) }}, {{ json_encode($allDayNames) }}, {{ $routine->id }})">
 
         <div class="px-6 pt-12 pb-6">
             <a href="{{ route('routines.index') }}" class="inline-flex items-center text-slate-400 hover:text-white transition mb-4">
@@ -42,12 +43,6 @@
 
         <div class="px-5 space-y-6">
 
-            @if(session('success'))
-                <div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 text-green-400 text-sm font-bold">
-                    {{ session('success') }}
-                </div>
-            @endif
-
             {{-- Paramètres --}}
             <div class="bg-[#111214] border border-slate-800 p-6 rounded-[3rem]">
                 <h2 class="text-lg font-black uppercase mb-4">Paramètres de la Routine</h2>
@@ -66,7 +61,6 @@
                 @foreach($days as $dayKey => $dayName)
                     @php
                         $routineDay = $routine->days->firstWhere('day_of_week', $dayKey);
-                        $hasWorkout = $routineDay && $routineDay->exercises->count() > 0;
                         $isToday    = $dayKey === \App\Models\RoutineDay::getTodayDay();
                     @endphp
                     <button @click="selectDay('{{ $dayKey }}')"
@@ -78,11 +72,10 @@
                         <div class="text-[9px] font-black uppercase tracking-wider mb-1">
                             {{ substr($dayName, 0, 3) }}
                         </div>
-                        @if($hasWorkout)
-                            <div class="text-lg font-black text-rose-400">{{ $routineDay->exercises->count() }}</div>
-                        @else
-                            <div class="text-xl opacity-20">·</div>
-                        @endif
+                        <div class="text-lg font-black"
+                             :class="(dayExercises['{{ $dayKey }}'] || []).length > 0 ? 'text-rose-400' : 'opacity-20'"
+                             x-text="(dayExercises['{{ $dayKey }}'] || []).length > 0 ? (dayExercises['{{ $dayKey }}'] || []).length : '·'">
+                        </div>
                     </button>
                 @endforeach
             </div>
@@ -104,19 +97,15 @@
                         </button>
                     </div>
 
-                    <form action="{{ route('routines.update-day', [$routine, $dayKey]) }}" method="POST" class="space-y-5">
-                        @csrf @method('PUT')
-
-                        <input type="text" name="name"
-                               value="{{ $routine->days->firstWhere('day_of_week', $dayKey)?->name ?? '' }}"
+                    <div class="space-y-5">
+                        <input type="text"
+                               x-model="dayNames['{{ $dayKey }}']"
                                placeholder="Nom de la séance (ex: Jambes Push)..."
                                class="w-full rounded-2xl bg-[#08090a] border-2 border-slate-800 focus:border-rose-500 focus:ring-0 py-3 px-5 text-white font-bold">
 
                         {{-- Recherche exercice --}}
                         <div>
-                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">
-                                Exercices
-                            </label>
+                            <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Exercices</label>
 
                             <div class="relative mb-3">
                                 <input type="text"
@@ -127,7 +116,6 @@
                                        autocomplete="off"
                                        class="w-full rounded-2xl bg-[#08090a] border-2 border-slate-800 focus:border-rose-500 focus:ring-0 py-3 px-5 text-white font-bold pr-12">
 
-                                {{-- Icône loupe / spinner --}}
                                 <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                                     <svg x-show="!searching" class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -135,7 +123,6 @@
                                     <div x-show="searching" class="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
                                 </div>
 
-                                {{-- Dropdown résultats --}}
                                 <div x-show="searchQuery.length >= 2"
                                      @click.outside="searchResults = []; searchQuery = ''"
                                      class="absolute top-full left-0 right-0 mt-2 bg-[#0d0e10] border-2 border-slate-800 rounded-2xl max-h-60 overflow-y-auto z-50 shadow-2xl">
@@ -143,7 +130,6 @@
                                     <template x-if="!searching && searchResults.length === 0">
                                         <div class="p-5 text-center">
                                             <p class="text-slate-500 text-sm">Aucun exercice trouvé pour "<span x-text="searchQuery" class="text-white"></span>"</p>
-                                            <p class="text-slate-700 text-xs mt-1">Vérifie que la base d'exercices est importée.</p>
                                         </div>
                                     </template>
 
@@ -166,13 +152,10 @@
                                 </div>
                             </div>
 
-                            {{-- Liste des exercices du jour --}}
+                            {{-- Liste des exercices --}}
                             <div class="space-y-2">
                                 <template x-for="(exercise, index) in (dayExercises['{{ $dayKey }}'] || [])" :key="index">
                                     <div class="bg-[#08090a] p-4 rounded-2xl border border-slate-800">
-                                        {{-- Champs cachés --}}
-                                        <input type="hidden" :name="'exercises[' + index + '][exercise_id]'" :value="exercise.exercise_id">
-
                                         <div class="flex items-center justify-between mb-3">
                                             <h4 class="font-black uppercase text-sm" x-text="exercise.name"></h4>
                                             <button type="button" @click="removeExercise('{{ $dayKey }}', index)"
@@ -182,24 +165,20 @@
                                                 </svg>
                                             </button>
                                         </div>
-
                                         <div class="grid grid-cols-3 gap-2">
                                             <div>
                                                 <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Séries</label>
-                                                <input type="number" :name="'exercises[' + index + '][sets_count]'"
-                                                       x-model.number="exercise.sets_count" min="1" max="10"
+                                                <input type="number" x-model.number="exercise.sets_count" min="1" max="10"
                                                        class="w-full rounded-xl bg-[#111214] border border-slate-700 focus:border-rose-500 focus:ring-0 py-2 px-3 text-white font-bold text-center">
                                             </div>
                                             <div>
                                                 <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Reps</label>
-                                                <input type="number" :name="'exercises[' + index + '][target_reps]'"
-                                                       x-model.number="exercise.target_reps" min="1"
+                                                <input type="number" x-model.number="exercise.target_reps" min="1"
                                                        class="w-full rounded-xl bg-[#111214] border border-slate-700 focus:border-rose-500 focus:ring-0 py-2 px-3 text-white font-bold text-center">
                                             </div>
                                             <div>
                                                 <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1">Repos (s)</label>
-                                                <input type="number" :name="'exercises[' + index + '][rest_time]'"
-                                                       x-model.number="exercise.rest_time" min="30" max="600" step="15"
+                                                <input type="number" x-model.number="exercise.rest_time" min="30" max="600" step="15"
                                                        class="w-full rounded-xl bg-[#111214] border border-slate-700 focus:border-rose-500 focus:ring-0 py-2 px-3 text-white font-bold text-center">
                                             </div>
                                         </div>
@@ -213,17 +192,25 @@
                             </div>
                         </div>
 
+                        {{-- Feedback sauvegarde --}}
+                        <div x-show="saveMessage" x-transition
+                             class="bg-green-500/10 border border-green-500/30 rounded-2xl p-3 text-green-400 text-sm font-bold text-center"
+                             x-text="saveMessage"></div>
+
                         <div class="flex gap-3 pt-2">
                             <button type="button" @click="selectedDay = null"
                                     class="flex-1 py-4 bg-slate-900 border border-slate-800 rounded-2xl font-black uppercase text-sm hover:bg-slate-800 transition-all">
                                 Annuler
                             </button>
-                            <button type="submit"
-                                    class="flex-1 py-4 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-2xl font-black uppercase text-sm shadow-lg shadow-rose-500/20 transition-all active:scale-95">
-                                Sauvegarder
+                            <button type="button"
+                                    @click="saveDay('{{ $dayKey }}')"
+                                    :disabled="saving"
+                                    class="flex-1 py-4 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-2xl font-black uppercase text-sm shadow-lg shadow-rose-500/20 transition-all active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2">
+                                <div x-show="saving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span x-text="saving ? 'Sauvegarde...' : 'Sauvegarder'"></span>
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
             @endforeach
 
@@ -235,34 +222,35 @@
 
     @push('scripts')
     <script>
-    function routineEditor(initialExercises) {
+    function routineEditor(initialExercises, initialNames, routineId) {
         return {
             selectedDay: null,
             dayExercises: initialExercises,
+            dayNames: initialNames,
+            routineId: routineId,
             searchQuery: '',
             searchResults: [],
             searching: false,
+            saving: false,
+            saveMessage: '',
             searchTimeout: null,
+            csrfToken: '{{ csrf_token() }}',
 
             selectDay(day) {
                 this.selectedDay = day;
                 this.searchQuery = '';
                 this.searchResults = [];
-                // S'assurer que le tableau existe pour ce jour
-                if (!this.dayExercises[day]) {
-                    this.dayExercises[day] = [];
-                }
+                if (!this.dayExercises[day]) this.dayExercises[day] = [];
+                if (this.dayNames[day] === undefined) this.dayNames[day] = '';
             },
 
             async fetchExercises(query) {
                 clearTimeout(this.searchTimeout);
-
                 if (query.length < 2) {
                     this.searchResults = [];
                     this.searching = false;
                     return;
                 }
-
                 this.searchTimeout = setTimeout(async () => {
                     this.searching = true;
                     try {
@@ -270,12 +258,8 @@
                             '/api/exercises/search?q=' + encodeURIComponent(query) + '&limit=25',
                             { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
                         );
-                        if (res.ok) {
-                            this.searchResults = await res.json();
-                        } else {
-                            this.searchResults = [];
-                        }
-                    } catch (e) {
+                        this.searchResults = res.ok ? await res.json() : [];
+                    } catch {
                         this.searchResults = [];
                     }
                     this.searching = false;
@@ -284,20 +268,17 @@
 
             addExercise(day, exerciseId, exerciseName) {
                 if (!this.dayExercises[day]) this.dayExercises[day] = [];
-
-                // Éviter les doublons
                 if (this.dayExercises[day].some(e => e.exercise_id === exerciseId)) {
                     this.searchQuery = '';
                     this.searchResults = [];
                     return;
                 }
-
                 this.dayExercises[day].push({
                     exercise_id: exerciseId,
                     name:        exerciseName,
                     sets_count:  3,
                     target_reps: 10,
-                    rest_time:   90
+                    rest_time:   90,
                 });
                 this.searchQuery = '';
                 this.searchResults = [];
@@ -305,7 +286,41 @@
 
             removeExercise(day, index) {
                 this.dayExercises[day].splice(index, 1);
-            }
+            },
+
+            async saveDay(dayKey) {
+                this.saving = true;
+                this.saveMessage = '';
+                try {
+                    const res = await fetch(`/routines/${this.routineId}/days/${dayKey}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': this.csrfToken,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            name: this.dayNames[dayKey] || '',
+                            exercises: (this.dayExercises[dayKey] || []).map((ex, i) => ({
+                                exercise_id: ex.exercise_id,
+                                sets_count:  ex.sets_count,
+                                target_reps: ex.target_reps,
+                                rest_time:   ex.rest_time,
+                            })),
+                        }),
+                    });
+                    if (res.ok) {
+                        this.saveMessage = '✓ Jour sauvegardé !';
+                        setTimeout(() => this.saveMessage = '', 3000);
+                    } else {
+                        const data = await res.json().catch(() => ({}));
+                        this.saveMessage = data.message || 'Erreur lors de la sauvegarde.';
+                    }
+                } catch {
+                    this.saveMessage = 'Erreur réseau.';
+                }
+                this.saving = false;
+            },
         };
     }
     </script>

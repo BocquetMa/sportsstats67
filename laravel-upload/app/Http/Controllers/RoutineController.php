@@ -138,6 +138,10 @@ class RoutineController extends Controller
             $routineDay->exercises()->sync($exercisesData);
         });
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Jour planifié avec succès !']);
+        }
+
         return back()->with('success', 'Jour planifié avec succès !');
     }
 
