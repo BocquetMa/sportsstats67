@@ -2,58 +2,75 @@
 
 namespace Database\Seeders;
 
+use App\Models\Exercise;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Http;
-use App\Models\Exercise;
 
 class ExerciseSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $this->command->info('Connexion à ExerciseDB (v1 Open Source)...');
+        $this->command->info('Importation des exercices depuis ExerciseDB...');
 
-        // On tente de récupérer les exercices
-        // L'URL correcte est https://exercisedb.dev/api/v1/exercises
-        $response = Http::withHeaders([
-            'Accept' => 'application/json',
-        ])->get('https://exercisedb.dev/api/v1/exercises', [
-            'limit' => 100 // On commence par 100 pour tester la stabilité
-        ]);
+        $limit = 1300;
+        $batchSize = 100;
+        $imported = 0;
 
-        if ($response->successful()) {
-            $result = $response->json();
+        $bar = $this->command->getOutput()->createProgressBar(ceil($limit / $batchSize));
+        $bar->start();
 
-            // Dans la v1, les données sont dans la clé 'data'
-            $exercises = $result['data'] ?? [];
+        while ($imported < $limit) {
+            $currentBatch = min($batchSize, $limit - $imported);
 
-            if (empty($exercises)) {
-                $this->command->warn('L\'API a répondu avec succès mais la liste d\'exercices est vide.');
-                return;
+            try {
+                $response = Http::timeout(30)
+                    ->withHeaders(['Accept' => 'application/json'])
+                    ->get('https://exercisedb.dev/api/v1/exercises', [
+                        'limit'  => $currentBatch,
+                        'offset' => $imported,
+                    ]);
+
+                if (!$response->successful()) {
+                    $this->command->newLine();
+                    $this->command->error("Erreur API status {$response->status()}");
+                    break;
+                }
+
+                $result = $response->json();
+                $exercises = $result['data'] ?? $result ?? [];
+
+                if (empty($exercises)) {
+                    break;
+                }
+
+                foreach ($exercises as $ex) {
+                    Exercise::updateOrCreate(
+                        ['exerciseId' => $ex['exerciseId'] ?? $ex['id'] ?? uniqid()],
+                        [
+                            'name'             => $ex['name'],
+                            'gifUrl'           => $ex['gifUrl'] ?? null,
+                            'targetMuscles'    => $ex['targetMuscles'] ?? [],
+                            'bodyParts'        => $ex['bodyParts'] ?? (isset($ex['bodyPart']) ? [$ex['bodyPart']] : []),
+                            'equipments'       => $ex['equipments'] ?? (isset($ex['equipment']) ? [$ex['equipment']] : []),
+                            'secondaryMuscles' => $ex['secondaryMuscles'] ?? [],
+                            'instructions'     => $ex['instructions'] ?? [],
+                        ]
+                    );
+                }
+
+                $imported += count($exercises);
+                $bar->advance();
+                usleep(200000); // 200ms pour éviter le rate limiting
+
+            } catch (\Exception $e) {
+                $this->command->newLine();
+                $this->command->error("Exception : " . $e->getMessage());
+                break;
             }
-
-            foreach ($exercises as $ex) {
-                Exercise::updateOrCreate(
-                    ['exerciseId' => $ex['exerciseId']], // On utilise l'ID de l'API comme référence unique
-                    [
-                        'name' => $ex['name'],
-                        'gifUrl' => $ex['gifUrl'],
-                        'targetMuscles' => $ex['targetMuscles'] ?? [],
-                        'bodyParts' => $ex['bodyParts'] ?? [],
-                        'equipments' => $ex['equipments'] ?? [],
-                        'secondaryMuscles' => $ex['secondaryMuscles'] ?? [],
-                        'instructions' => $ex['instructions'] ?? [],
-                    ]
-                );
-            }
-
-            $this->command->info(count($exercises) . ' exercices ont été synchronisés avec succès !');
-        } else {
-            $this->command->error('Échec de l\'importation.');
-            $this->command->error('Statut : ' . $response->status());
-            $this->command->error('Message : ' . $response->body());
         }
+
+        $bar->finish();
+        $this->command->newLine();
+        $this->command->info(Exercise::count() . ' exercices disponibles en base.');
     }
 }

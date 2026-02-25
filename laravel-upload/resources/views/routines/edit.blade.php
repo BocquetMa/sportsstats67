@@ -4,6 +4,23 @@
              selectedDay: null,
              exercises: [],
              searchQuery: '',
+             searchResults: [],
+             searching: false,
+             searchTimeout: null,
+
+             async fetchExercises(query) {
+                 if (query.length < 2) { this.searchResults = []; return; }
+                 this.searching = true;
+                 clearTimeout(this.searchTimeout);
+                 this.searchTimeout = setTimeout(async () => {
+                     try {
+                         const res = await fetch('/api/exercises/search?q=' + encodeURIComponent(query) + '&limit=20');
+                         this.searchResults = await res.json();
+                     } catch (e) { this.searchResults = []; }
+                     this.searching = false;
+                 }, 300);
+             },
+
              addExercise(exerciseId, exerciseName) {
                  this.exercises.push({
                      exercise_id: exerciseId,
@@ -13,7 +30,9 @@
                      rest_time: 90
                  });
                  this.searchQuery = '';
+                 this.searchResults = [];
              },
+
              removeExercise(index) {
                  this.exercises.splice(index, 1);
              }
@@ -154,22 +173,31 @@
                                 <input type="text"
                                        x-ref="exerciseSearch"
                                        x-model="searchQuery"
-                                       placeholder="Rechercher un exercice..."
+                                       @input="fetchExercises(searchQuery)"
+                                       placeholder="Rechercher un exercice (ex: squat, bench press...)"
+                                       autocomplete="off"
                                        class="w-full rounded-2xl bg-[#08090a] border-2 border-slate-800 focus:border-rose-500 focus:ring-0 py-3 px-5 text-white font-bold">
 
-                                <div x-show="searchQuery.length > 0"
+                                <div x-show="searchQuery.length >= 2"
                                      class="absolute top-full left-0 right-0 mt-2 bg-[#111214] border-2 border-slate-800 rounded-2xl max-h-64 overflow-y-auto z-10">
-                                    @foreach($exercises as $exercise)
+
+                                    <div x-show="searching" class="p-4 text-center text-slate-500 text-sm">
+                                        Recherche en cours...
+                                    </div>
+
+                                    <template x-if="!searching && searchResults.length === 0 && searchQuery.length >= 2">
+                                        <div class="p-4 text-center text-slate-500 text-sm">Aucun exercice trouvé</div>
+                                    </template>
+
+                                    <template x-for="ex in searchResults" :key="ex.id">
                                         <button type="button"
-                                                x-show="'{{ strtolower($exercise->name) }}'.includes(searchQuery.toLowerCase())"
-                                                @click="addExercise({{ $exercise->id }}, '{{ $exercise->name }}')"
+                                                @click="addExercise(ex.id, ex.name)"
                                                 class="w-full text-left p-3 hover:bg-slate-900 transition-colors border-b border-slate-800 last:border-0">
-                                            <span class="font-black text-sm">{{ $exercise->name }}</span>
-                                            @if($exercise->targetMuscles)
-                                                <p class="text-[9px] text-slate-500 font-bold mt-1">{{ $exercise->targetMuscles }}</p>
-                                            @endif
+                                            <span class="font-black text-sm" x-text="ex.name"></span>
+                                            <p class="text-[9px] text-slate-500 font-bold mt-0.5"
+                                               x-text="Array.isArray(ex.targetMuscles) ? ex.targetMuscles.join(', ') : ex.targetMuscles"></p>
                                         </button>
-                                    @endforeach
+                                    </template>
                                 </div>
                             </div>
 
@@ -254,5 +282,4 @@
         </div>
     </div>
 
-    @include('layouts.navigation')
 </x-app-layout>

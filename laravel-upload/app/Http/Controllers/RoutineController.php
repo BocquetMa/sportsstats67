@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Routine;
 use App\Models\RoutineDay;
 use App\Models\RoutineShare;
-use App\Models\Exercise;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -31,8 +30,7 @@ class RoutineController extends Controller
      */
     public function create()
     {
-        $exercises = Exercise::all();
-        return view('routines.create', compact('exercises'));
+        return view('routines.create');
     }
 
     /**
@@ -62,10 +60,9 @@ class RoutineController extends Controller
         if ($routine->user_id !== Auth::id()) abort(403);
 
         $routine->load('days.exercises');
-        $exercises = Exercise::all();
         $days = RoutineDay::$daysInFrench;
 
-        return view('routines.edit', compact('routine', 'exercises', 'days'));
+        return view('routines.edit', compact('routine', 'days'));
     }
 
     /**

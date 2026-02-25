@@ -38,7 +38,6 @@
             </form>
         </div>
 
-        @include('layouts.navigation')
     </div>
 
     <script type="module">

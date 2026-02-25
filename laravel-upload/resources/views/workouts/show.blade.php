@@ -108,7 +108,6 @@
             </form>
         </div>
 
-        @include('layouts.navigation')
     </div>
 
     @vite('resources/js/workout-manager.js')

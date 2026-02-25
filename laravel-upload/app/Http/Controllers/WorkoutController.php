@@ -8,6 +8,7 @@ use App\Models\TrainingSet;
 use App\Models\Routine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class WorkoutController extends Controller
 {
@@ -176,9 +177,46 @@ class WorkoutController extends Controller
 
         $workout->update([
             'status' => 'completed',
-            'completed_at' => now()
+            'completed_at' => now(),
         ]);
 
-return redirect()->route('profile.history')
-                         ->with('status', 'Séance terminée ! Tes efforts sont enregistrés.');    }
+        return redirect()->route('profile.history')
+            ->with('status', 'Séance terminée ! Tes efforts sont enregistrés.');
+    }
+
+    /**
+     * Génère ou retourne un lien de partage pour un workout terminé.
+     */
+    public function share(Workout $workout)
+    {
+        if ($workout->user_id !== Auth::id()) abort(403);
+        if ($workout->status !== 'completed') {
+            return back()->with('error', 'Tu peux partager uniquement les séances terminées.');
+        }
+
+        if (!$workout->share_token) {
+            $workout->update(['share_token' => Str::random(32)]);
+        }
+
+        $url = route('workouts.shared', $workout->share_token);
+        return back()->with('share_url', $url);
+    }
+
+    /**
+     * Page publique d'un workout partagé.
+     */
+    public function showShared(string $token)
+    {
+        $workout = Workout::where('share_token', $token)
+            ->where('status', 'completed')
+            ->with(['trainingSets.exercise', 'user'])
+            ->firstOrFail();
+
+        $sets = $workout->trainingSets->groupBy('exercise_id');
+
+        $totalVolume = $workout->trainingSets->sum(fn($s) => $s->weight * $s->reps);
+        $totalSets   = $workout->trainingSets->count();
+
+        return view('workouts.shared', compact('workout', 'sets', 'totalVolume', 'totalSets'));
+    }
 }

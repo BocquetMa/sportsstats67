@@ -15,6 +15,21 @@
 
         <div class="px-5 space-y-8">
 
+            @if(session('share_url'))
+                <div class="bg-rose-500/10 border border-rose-500/30 rounded-[2rem] p-5" x-data="{copied: false}">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-2">Lien de partage généré</p>
+                    <div class="flex gap-2 items-center">
+                        <input type="text" value="{{ session('share_url') }}" readonly
+                               class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-300 font-mono">
+                        <button @click="navigator.clipboard.writeText('{{ session('share_url') }}'); copied = true; setTimeout(() => copied = false, 2000)"
+                                class="px-4 py-2 bg-rose-500 text-white text-xs font-black rounded-xl active:scale-95 transition-all">
+                            <span x-show="!copied">Copier</span>
+                            <span x-show="copied">Copié !</span>
+                        </button>
+                    </div>
+                </div>
+            @endif
+
             <div class="relative group">
                 <div class="absolute -inset-1 bg-gradient-to-r from-rose-500 to-rose-600 rounded-[3rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
                 <div class="relative bg-[#111214] border border-slate-800 p-8 rounded-[3rem] shadow-2xl">
@@ -133,13 +148,31 @@
                                     </div>
                                 </div>
 
-                                <a href="{{ route('workouts.show', $workout) }}"
-                                   class="group/btn relative inline-flex items-center justify-center w-full px-6 py-4 font-black transition-all duration-200 bg-white text-black rounded-2xl hover:bg-rose-500 hover:text-white border-2 border-transparent hover:border-rose-500 active:scale-95">
-                                    <span>VOIR DÉTAILS</span>
-                                    <svg class="w-5 h-5 ml-2 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </a>
+                                <div class="flex gap-2">
+                                    <a href="{{ route('workouts.show', $workout) }}"
+                                       class="group/btn flex-1 inline-flex items-center justify-center px-4 py-4 font-black transition-all duration-200 bg-white text-black rounded-2xl hover:bg-rose-500 hover:text-white active:scale-95 text-sm">
+                                        VOIR DÉTAILS
+                                    </a>
+                                    @if($workout->status === 'completed')
+                                        @if($workout->share_token)
+                                            <a href="{{ route('workouts.shared', $workout->share_token) }}"
+                                               target="_blank"
+                                               class="w-14 inline-flex items-center justify-center rounded-2xl bg-slate-800 border border-slate-700 hover:border-rose-500/50 transition-all"
+                                               title="Voir le lien public">
+                                                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                            </a>
+                                        @else
+                                            <form action="{{ route('workouts.share', $workout) }}" method="POST">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="w-14 h-full inline-flex items-center justify-center rounded-2xl bg-slate-800 border border-slate-700 hover:border-rose-500/50 transition-all"
+                                                        title="Générer un lien de partage">
+                                                    <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     @empty
@@ -160,5 +193,4 @@
         </div>
     </div>
 
-    @include('layouts.navigation')
 </x-app-layout>

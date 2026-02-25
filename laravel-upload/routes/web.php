@@ -9,6 +9,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\RoutineController;
 use App\Http\Controllers\EvolutionController;
 use App\Http\Controllers\GamificationController;
+use App\Http\Controllers\StatsController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Exercices
     Route::get('/exercises', [ExerciseController::class, 'index'])->name('exercises.index');
+    Route::get('/api/exercises/search', [ExerciseController::class, 'search'])->name('exercises.search');
 
     // Séances (Workouts)
     Route::get('/workouts', [WorkoutController::class, 'index'])->name('workouts.index');
@@ -39,6 +41,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // L'ACTION QUI MANQUAIT : Terminer la séance
     Route::post('/workouts/{workout}/finish', [WorkoutController::class, 'finish'])->name('workout.finish');
+
+    // Partage de séance
+    Route::post('/workouts/{workout}/share', [WorkoutController::class, 'share'])->name('workouts.share');
 
     // Gestion des Sets (Séries)
     Route::post('/workouts/{workout}/add-exercise', [WorkoutController::class, 'addExercise'])->name('workouts.add-exercise');
@@ -81,6 +86,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile/{user}/public', [GamificationController::class, 'profile'])->name('profile.public');
     Route::get('/gamification/badges', [GamificationController::class, 'badges'])->name('gamification.badges');
     Route::get('/leaderboard', [GamificationController::class, 'leaderboard'])->name('leaderboard');
+
+    // Statistiques
+    Route::get('/stats', [StatsController::class, 'index'])->name('stats.index');
+    Route::get('/api/stats/weight', [StatsController::class, 'weightChart'])->name('stats.weight');
+    Route::get('/api/stats/volume', [StatsController::class, 'weeklyVolume'])->name('stats.volume');
+    Route::get('/api/stats/exercise', [StatsController::class, 'exerciseProgress'])->name('stats.exercise');
+    Route::get('/api/stats/dashboard', [StatsController::class, 'dashboardStats'])->name('stats.dashboard');
+
+    // Historique (doit être dans le groupe auth)
+    Route::get('/history', [ProfileController::class, 'history'])->name('profile.history');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -89,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/messages/{user}', [MessageController::class, 'store'])->name('messages.store');
 });
 
-Route::get('/history', [ProfileController::class, 'history'])->name('profile.history');
+// Page publique d'un workout partagé (accessible sans auth)
+Route::get('/w/{token}', [WorkoutController::class, 'showShared'])->name('workouts.shared');
 
 require __DIR__.'/auth.php';

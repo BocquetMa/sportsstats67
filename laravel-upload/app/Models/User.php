@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\BodyMetric;
+use App\Models\BodyPhoto;
 
 class User extends Authenticatable
 {
@@ -66,16 +67,7 @@ class User extends Authenticatable
         return $this->hasMany(Routine::class);
     }
 
-    public function getSortedWorkoutsAttribute()
-{
-    $order = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-
-    return $this->workouts->sortBy(function ($workout) use ($order) {
-        return array_search($workout->day, $order);
-    });
-}
-
-public function metrics()
+    public function metrics()
 {
     return $this->hasMany(BodyMetric::class)->orderBy('created_at', 'desc');
 }
@@ -85,10 +77,9 @@ public function latestMetric()
     return $this->hasOne(BodyMetric::class)->latestOfMany();
 }
 
-// Pour la force, on suppose que tu as une table avec tes perfs
-public function exercises()
+public function bodyPhotos()
 {
-    return $this->hasMany(ExerciseRecord::class);
+    return $this->hasMany(BodyPhoto::class);
 }
 
 public function messagesSent()
@@ -100,11 +91,6 @@ public function messagesReceived()
 {
     return $this->hasMany(Message::class, 'receiver_id');
 }
-public function routines(): \Illuminate\Database\Eloquent\Relations\HasMany
-{
-    return $this->hasMany(Routine::class);
-}
-
 
 public function getRankAttribute()
 {

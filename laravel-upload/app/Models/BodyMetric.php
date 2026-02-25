@@ -9,7 +9,7 @@ class BodyMetric extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'weight', 'body_fat', 'objective'];
+    protected $fillable = ['user_id', 'weight', 'body_fat', 'objective', 'chest', 'waist', 'hips', 'arms', 'thighs', 'calves'];
 
     public function user()
     {

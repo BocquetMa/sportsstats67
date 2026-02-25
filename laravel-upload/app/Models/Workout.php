@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Workout extends Model
 {
-    protected $fillable = ['title', 'user_id'];
+    protected $fillable = ['title', 'user_id', 'status', 'routine_id', 'started_at', 'completed_at', 'share_token'];
 
     public function trainingSets()
     {

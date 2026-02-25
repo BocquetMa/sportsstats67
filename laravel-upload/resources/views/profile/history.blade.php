@@ -68,6 +68,5 @@
             </div>
         </div>
 
-        @include('layouts.navigation')
     </div>
 </x-app-layout>
