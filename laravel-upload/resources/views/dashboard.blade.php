@@ -22,7 +22,7 @@
                         <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
                     </div>
                     <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Volume Hebdo</p>
-                    <h3 class="text-2xl font-black mt-1">{{ number_format($totalVolume, 0, '.', ' ') }} <span class="text-xs text-slate-600">KG</span></h3>
+                    <h3 class="text-2xl font-black mt-1">{{ number_format($totalVolume ?? 0, 0, '.', ' ') }} <span class="text-xs text-slate-600">KG</span></h3>
                 </div>
 
                 <div class="group bg-[#111214] border border-slate-800/50 p-5 rounded-[2.5rem] hover:border-blue-500/50 transition-all duration-500">
@@ -30,7 +30,7 @@
                         <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
                     <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Seances</p>
-                    <h3 class="text-2xl font-black mt-1">{{ $workoutCount }}</h3>
+                    <h3 class="text-2xl font-black mt-1">{{ $workoutCount ?? 0 }}</h3>
                 </div>
             </div>
 
