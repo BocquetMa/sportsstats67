@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TrainingSet extends Model
 {
-    protected $fillable = ['workout_id', 'exercise_id', 'reps', 'weight', 'is_assisted', 'rest_time', 'set_number'];
+    protected $fillable = ['workout_id', 'exercise_id', 'reps', 'weight', 'is_assisted', 'rest_time', 'set_number', 'completed_at'];
 
     /**
      * Une série appartient à un exercice

@@ -116,14 +116,16 @@ class StatsController extends Controller
         $user = Auth::user();
         $weeks = $request->get('weeks', 8);
 
+        $driver = DB::getDriverName();
+        $weekExpr = $driver === 'mysql'
+            ? "DATE_FORMAT(workouts.completed_at, '%Y-%u') as week"
+            : "strftime('%Y-%W', workouts.completed_at) as week";
+
         $volumes = DB::table('training_sets')
             ->join('workouts', 'training_sets.workout_id', '=', 'workouts.id')
             ->where('workouts.user_id', $user->id)
             ->where('workouts.completed_at', '>=', now()->subWeeks($weeks))
-            ->selectRaw("
-                strftime('%Y-%W', workouts.completed_at) as week,
-                SUM(training_sets.weight * training_sets.reps) as total_volume
-            ")
+            ->selectRaw("{$weekExpr}, SUM(training_sets.weight * training_sets.reps) as total_volume")
             ->groupBy('week')
             ->orderBy('week', 'asc')
             ->get();

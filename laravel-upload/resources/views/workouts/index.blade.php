@@ -15,6 +15,10 @@
 
         <div class="px-5 space-y-8">
 
+            @if(session('success'))
+                <x-alert type="success">{{ session('success') }}</x-alert>
+            @endif
+
             @if(session('share_url'))
                 <div class="bg-rose-500/10 border border-rose-500/30 rounded-[2rem] p-5" x-data="{copied: false}">
                     <p class="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-2">Lien de partage généré</p>
@@ -95,7 +99,9 @@
                                 <div class="bg-[#08090a] p-3 rounded-2xl border border-slate-800 hover:border-rose-500/50 transition-all">
                                     <h4 class="font-black uppercase text-sm">{{ $exercise->name }}</h4>
                                     @if($exercise->targetMuscles)
-                                        <p class="text-[9px] text-slate-500 font-bold mt-1">{{ $exercise->targetMuscles }}</p>
+                                        <p class="text-[9px] text-slate-500 font-bold mt-1">
+                                            {{ is_array($exercise->targetMuscles) ? implode(', ', $exercise->targetMuscles) : $exercise->targetMuscles }}
+                                        </p>
                                     @endif
                                 </div>
                             @empty

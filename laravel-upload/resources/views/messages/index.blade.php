@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="py-6 bg-[#0a0a0b] min-h-screen">
+    <div class="py-6 bg-[#08090a] min-h-screen">
         <div class="max-w-2xl mx-auto px-4">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-white font-black italic uppercase text-3xl tracking-tighter">Messages</h2>

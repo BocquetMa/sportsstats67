@@ -87,40 +87,14 @@
                 </div>
             </div>
 
-            <div class="mt-8 bg-[#111214]/50 border border-white/5 p-6 rounded-[2rem]">
-                <div class="flex justify-between items-end mb-6">
-                    <div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Planning Hebdo</h3>
-                        <p class="text-[9px] text-slate-500 uppercase mt-1 font-bold">Disponibilité à la salle</p>
-                    </div>
-                    <span class="text-[10px] font-black text-rose-500 uppercase tracking-widest italic bg-rose-500/10 px-3 py-1 rounded-lg">
-                        Fréquence : {{ $user->workouts->count() }} / 7
-                    </span>
+            <div class="mt-8 grid grid-cols-2 gap-4">
+                <div class="bg-[#111214]/50 border border-white/5 p-6 rounded-[2rem] text-center">
+                    <p class="text-3xl font-black">{{ $user->workouts()->where('status', 'completed')->count() }}</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mt-1">Séances</p>
                 </div>
-
-                <div class="flex justify-between gap-2">
-                    @php
-                        $days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-                        $userWorkouts = $user->workouts->pluck('day')->toArray();
-                    @endphp
-
-                    @foreach($days as $day)
-                        @php $isTraining = in_array($day, $userWorkouts); @endphp
-                        <div class="flex-1 flex flex-col items-center gap-3">
-                            <div class="w-full h-16 rounded-2xl border transition-all duration-500 {{ $isTraining ? 'border-rose-500 bg-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.3)]' : 'border-white/5 bg-[#08090a]' }} flex items-center justify-center">
-                                @if($isTraining)
-                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                    </svg>
-                                @else
-                                    <div class="w-1.5 h-1.5 rounded-full bg-slate-800"></div>
-                                @endif
-                            </div>
-                            <span class="text-[10px] font-black uppercase {{ $isTraining ? 'text-rose-500' : 'text-slate-600' }}">
-                                {{ substr($day, 0, 1) }}
-                            </span>
-                        </div>
-                    @endforeach
+                <div class="bg-[#111214]/50 border border-white/5 p-6 rounded-[2rem] text-center">
+                    <p class="text-3xl font-black text-rose-500">{{ $user->xp ?? 0 }}</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mt-1">XP Total</p>
                 </div>
             </div>
 

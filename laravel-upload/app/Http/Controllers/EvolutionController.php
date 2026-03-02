@@ -340,14 +340,16 @@ class EvolutionController extends Controller
     {
         $user = Auth::user();
 
+        $driver = \Illuminate\Support\Facades\DB::getDriverName();
+        $monthExpr = $driver === 'mysql'
+            ? "DATE_FORMAT(created_at, '%Y-%m') as month"
+            : "strftime('%Y-%m', created_at) as month";
+
         $monthly = WorkoutCalorie::whereHas('workout', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->where('created_at', '>=', now()->subMonths(6))
-            ->selectRaw("
-                strftime('%Y-%m', created_at) as month,
-                SUM(estimated_calories) as total
-            ")
+            ->selectRaw("{$monthExpr}, SUM(estimated_calories) as total")
             ->groupBy('month')
             ->orderBy('month', 'asc')
             ->get();
@@ -363,7 +365,7 @@ class EvolutionController extends Controller
     /**
      * Personal Bests par exercice
      */
-    public function personalBests()
+    public function personalBests(Request $request)
     {
         $user = Auth::user();
 
@@ -386,6 +388,10 @@ class EvolutionController extends Controller
                 ];
             });
 
-        return response()->json($pb);
+        if ($request->wantsJson()) {
+            return response()->json($pb);
+        }
+
+        return view('stats.personal-bests', ['personalBests' => $pb]);
     }
 }

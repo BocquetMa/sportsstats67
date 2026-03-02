@@ -72,7 +72,8 @@ class ProfileController extends Controller
 
 public function history()
 {
-    $user = auth()->user()->load(['metrics', 'workouts']);
+    $user = auth()->user();
+    $user->load(['metrics', 'workouts.trainingSets']);
 
     $latest = $user->latestMetric;
     $previous = $user->metrics->skip(1)->first();
@@ -80,14 +81,25 @@ public function history()
     // Calcul de la tendance de poids
     $weightDiff = 0;
     if ($latest && $previous) {
-        $weightDiff = $latest->weight - $previous->weight;
+        $weightDiff = round($latest->weight - $previous->weight, 1);
     }
+
+    // Statistiques globales
+    $completedWorkouts = $user->workouts->where('status', 'completed');
+    $totalVolume = $completedWorkouts->sum(function($workout) {
+        return $workout->trainingSets->sum(fn($s) => $s->weight * $s->reps);
+    });
+    $totalSets = $completedWorkouts->sum(fn($w) => $w->trainingSets->count());
 
     return view('profile.history', [
         'user' => $user,
         'latest' => $latest,
         'weightDiff' => $weightDiff,
-        'metrics' => $user->metrics->take(7)->reverse(), // Pour le graphe
+        'metrics' => $user->metrics->take(7)->reverse(),
+        'workouts' => $user->workouts->sortByDesc('created_at'),
+        'totalVolume' => $totalVolume,
+        'totalSets' => $totalSets,
+        'completedCount' => $completedWorkouts->count(),
     ]);
 }
 

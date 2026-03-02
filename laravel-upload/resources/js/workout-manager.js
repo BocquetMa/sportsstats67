@@ -3,11 +3,12 @@
  * Gère l'état et la logique de l'interface d'entraînement
  */
 
-export function workoutManager(totalExercises, csrfToken) {
+export function workoutManager(totalExercises, csrfToken, workoutId) {
     return {
         // État
         currentIndex: 0,
         totalExercises: totalExercises,
+        workoutId: workoutId,
         showList: false,
         activeSet: null,
         completedSets: [],
@@ -17,6 +18,11 @@ export function workoutManager(totalExercises, csrfToken) {
         interval: null,
         isLoading: false,
         error: null,
+
+        // Clé localStorage unique par séance
+        get storageKey() {
+            return `completedSets_workout_${this.workoutId}`;
+        },
 
         // Navigation entre exercices
         next() {
@@ -38,6 +44,9 @@ export function workoutManager(totalExercises, csrfToken) {
 
         // Gestion des séries
         async completeSet(setId, restTime = 90) {
+            // Si déjà complété, on ne fait rien
+            if (this.completedSets.includes(setId)) return;
+
             // Récupération des valeurs
             const weightInput = document.getElementById(`weight-${setId}`);
             const repsInput = document.getElementById(`reps-${setId}`);
@@ -52,12 +61,12 @@ export function workoutManager(totalExercises, csrfToken) {
 
             // Validation
             if (isNaN(weight) || weight < 0) {
-                this.showError('Le poids doit être un nombre positif');
+                this.showError('Le poids doit être un nombre positif (ou 0 pour poids de corps)');
                 return;
             }
 
-            if (isNaN(reps) || reps < 1 || reps > 100) {
-                this.showError('Les répétitions doivent être entre 1 et 100');
+            if (isNaN(reps) || reps < 1 || reps > 999) {
+                this.showError('Les répétitions doivent être entre 1 et 999');
                 return;
             }
 
@@ -77,23 +86,22 @@ export function workoutManager(totalExercises, csrfToken) {
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Erreur lors de la mise à jour');
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Erreur ${response.status}`);
                 }
 
-                const data = await response.json();
+                await response.json();
 
                 // Marquer comme complété
-                if (!this.completedSets.includes(setId)) {
-                    this.completedSets.push(setId);
-                }
+                this.completedSets.push(setId);
+                this.saveCompletedSets();
 
                 // Démarrer le timer de repos
                 this.startRest(restTime);
 
             } catch (error) {
                 console.error('Erreur lors de la mise à jour:', error);
-                this.showError(error.message || 'Erreur lors de la sauvegarde');
+                this.showError(error.message || 'Erreur lors de la sauvegarde. Vérifiez votre connexion.');
             } finally {
                 this.isLoading = false;
                 this.activeSet = null;
@@ -137,30 +145,33 @@ export function workoutManager(totalExercises, csrfToken) {
         },
 
         formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
+            const mins = Math.floor(Math.max(0, seconds) / 60);
+            const secs = Math.max(0, seconds) % 60;
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         },
 
-        // Notification sonore (optionnel)
+        // Notification sonore
         playSound() {
-            // Utiliser l'API Web Audio pour un bip simple
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+                // Trois bips successifs
+                [0, 0.2, 0.4].forEach((delay) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
 
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
 
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    oscillator.frequency.value = 880;
+                    oscillator.type = 'sine';
 
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.5);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + delay);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + delay + 0.15);
+
+                    oscillator.start(audioContext.currentTime + delay);
+                    oscillator.stop(audioContext.currentTime + delay + 0.15);
+                });
             } catch (error) {
                 console.warn('Notification sonore non disponible:', error);
             }
@@ -180,7 +191,6 @@ export function workoutManager(totalExercises, csrfToken) {
         },
 
         getTotalSets() {
-            // Cette valeur devrait être passée ou calculée
             return document.querySelectorAll('[id^="set-row-"]').length;
         },
 
@@ -190,11 +200,13 @@ export function workoutManager(totalExercises, csrfToken) {
             return Math.round((this.getCompletedCount() / total) * 100);
         },
 
+        isAllCompleted() {
+            return this.getTotalSets() > 0 && this.getCompletedCount() >= this.getTotalSets();
+        },
+
         // Lifecycle
         init() {
-            console.log('Workout Manager initialisé');
-
-            // Charger les séries complétées depuis le localStorage
+            // Charger les séries complétées depuis le localStorage (spécifique à cette séance)
             this.loadCompletedSets();
 
             // Nettoyer le timer quand on quitte la page
@@ -205,18 +217,24 @@ export function workoutManager(totalExercises, csrfToken) {
         },
 
         loadCompletedSets() {
-            const saved = localStorage.getItem('completedSets');
+            const saved = localStorage.getItem(this.storageKey);
             if (saved) {
                 try {
                     this.completedSets = JSON.parse(saved);
                 } catch (error) {
                     console.warn('Impossible de charger les séries complétées:', error);
+                    this.completedSets = [];
                 }
             }
         },
 
         saveCompletedSets() {
-            localStorage.setItem('completedSets', JSON.stringify(this.completedSets));
+            localStorage.setItem(this.storageKey, JSON.stringify(this.completedSets));
+        },
+
+        clearCompletedSets() {
+            localStorage.removeItem(this.storageKey);
+            this.completedSets = [];
         }
     }
 }
