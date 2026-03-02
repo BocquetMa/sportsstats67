@@ -180,8 +180,16 @@ class WorkoutController extends Controller
             'completed_at' => now(),
         ]);
 
+        // Calculer le volume de la séance pour l'XP
+        $volume = $workout->trainingSets->sum(fn($s) => $s->weight * $s->reps);
+        $setsCount = $workout->trainingSets->count();
+
+        // XP: 50 de base + 1 XP par série complétée (max 150)
+        $xpEarned = min(150, 50 + $setsCount);
+        Auth::user()->increment('xp', $xpEarned);
+
         return redirect()->route('profile.history')
-            ->with('status', 'Séance terminée ! Tes efforts sont enregistrés.');
+            ->with('success', "Séance terminée ! +{$xpEarned} XP gagnés 💪");
     }
 
     /**

@@ -57,11 +57,15 @@ class MessageController extends Controller
             'content' => $request->content,
         ]);
 
-        $currentUser = auth()->user();
-    $currentUser->increment('xp', 10);
+        auth()->user()->increment('xp', 10);
 
-        // On lance l'événement Reverb
-        broadcast(new MessageSent($message))->toOthers();
+        // Broadcast via Reverb (ne bloque pas si non configuré)
+        try {
+            broadcast(new MessageSent($message))->toOthers();
+        } catch (\Exception $e) {
+            // Broadcasting non configuré, on continue quand même
+            \Illuminate\Support\Facades\Log::debug('Broadcasting non disponible: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,

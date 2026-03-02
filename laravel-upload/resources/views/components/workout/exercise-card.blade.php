@@ -8,8 +8,8 @@
 
     <div class="bg-[#111214] rounded-[2.5rem] border border-slate-800 overflow-hidden shadow-2xl">
         <div class="relative w-full aspect-video bg-slate-900 border-b border-slate-800">
-            @if($exercise->image_url)
-                <img src="{{ $exercise->image_url }}"
+            @if($exercise->gifUrl)
+                <img src="{{ $exercise->gifUrl }}"
                      alt="{{ $exercise->name }}"
                      class="w-full h-full object-cover"
                      loading="lazy">

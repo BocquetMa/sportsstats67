@@ -1,219 +1,194 @@
-@extends('layouts.app')
+<x-app-layout>
+    <div class="min-h-screen bg-[#08090a] text-white pb-28">
 
-@section('title', 'Profil de ' . $user->name)
+        {{-- Cover + Avatar --}}
+        <div class="relative h-56 w-full">
+            @if($user->cover_photo)
+                <img src="{{ asset('storage/' . $user->cover_photo) }}" class="w-full h-full object-cover">
+            @else
+                <div class="w-full h-full bg-gradient-to-br from-rose-700/40 via-[#111214] to-[#08090a]"></div>
+            @endif
+            <div class="absolute inset-0 bg-gradient-to-t from-[#08090a] via-[#08090a]/20 to-transparent"></div>
 
-@section('content')
-<div class="min-h-screen bg-slate-900 text-white">
-    <!-- Header avec cover photo -->
-    <div class="relative">
-        <div class="h-48 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"></div>
-        @if($user->cover_photo)
-        <div class="absolute inset-0 bg-cover" style="background-image: url('{{ Storage::url($user->cover_photo) }}'); opacity: 0.3;"></div>
-        @endif
-        <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-900 to-transparent"></div>
-    </div>
+            <a href="javascript:history.back()"
+               class="absolute top-6 left-6 p-3 bg-black/30 backdrop-blur-xl rounded-2xl border border-white/10 hover:bg-rose-500/20 transition-all z-20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                </svg>
+            </a>
+        </div>
 
-    <div class="max-w-6xl mx-auto px-6 -mt-20 relative z-10">
-        <div class="flex flex-col md:flex-row gap-6">
-            <!-- Sidebar Profil -->
-            <div class="md:w-72">
-                <div class="bg-slate-800 rounded-xl p-6 text-center">
-                    @if($user->avatar)
-                    <img src="{{ Storage::url($user->avatar) }}" alt="{{ $user->name }}" class="w-32 h-32 rounded-full mx-auto border-4 border-slate-800 object-cover">
-                    @else
-                    <div class="w-32 h-32 rounded-full mx-auto bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-4xl font-bold">
-                        {{ substr($user->name, 0, 1) }}
+        <div class="px-6 -mt-16 relative z-10 space-y-6">
+
+            {{-- Profil header --}}
+            <div class="flex items-end justify-between">
+                <div class="relative">
+                    <div class="w-28 h-28 rounded-[2rem] bg-[#111214] border-[5px] border-[#08090a] overflow-hidden shadow-2xl">
+                        @if($user->avatar)
+                            <img src="{{ asset('storage/' . $user->avatar) }}" class="w-full h-full object-cover">
+                        @else
+                            <div class="w-full h-full flex items-center justify-center text-4xl font-black italic bg-gradient-to-br from-rose-500 to-rose-700 text-white">
+                                {{ substr($user->name, 0, 1) }}
+                            </div>
+                        @endif
                     </div>
-                    @endif
-
-                    <h1 class="text-2xl font-bold mt-4">{{ $user->name }}</h1>
-
-                    <div class="flex items-center justify-center gap-2 mt-2">
-                        <span class="px-3 py-1 rounded-full text-sm font-semibold {{ $rank['color'] }} border {{ $rank['border'] }}">
-                            {{ $rank['label'] }}
+                    <div class="absolute -bottom-2 -right-2 bg-[#08090a] p-1 rounded-xl">
+                        <span class="px-2 py-0.5 rounded-lg border {{ $user->rank['border'] }} {{ $user->rank['color'] }} text-[9px] font-black italic tracking-tighter">
+                            {{ $user->rank['label'] }}
                         </span>
                     </div>
-
-                    @if($user->bio)
-                    <p class="text-slate-400 mt-4 text-sm">{{ $user->bio }}</p>
-                    @endif
-
-                    <!-- Stats rapides -->
-                    <div class="grid grid-cols-2 gap-4 mt-6">
-                        <div class="text-center">
-                            <p class="text-2xl font-bold text-yellow-400">{{ number_format($stats['xp']) }}</p>
-                            <p class="text-xs text-slate-400">XP Total</p>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-2xl font-bold text-blue-400">{{ $stats['streak'] }}</p>
-                            <p class="text-xs text-slate-400">Jours streak</p>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Stats détaillées -->
-                <div class="bg-slate-800 rounded-xl p-6 mt-4">
-                    <h2 class="font-semibold mb-4">📊 Statistiques</h2>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Entraînements</span>
-                            <span class="font-semibold">{{ $stats['total_workouts'] }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Volume total</span>
-                            <span class="font-semibold">{{ $stats['total_volume_tons'] }}t</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Max handled</span>
-                            <span class="font-semibold">{{ $stats['max_weight'] }}kg</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Photos</span>
-                            <span class="font-semibold">{{ $stats['photos_count'] }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-slate-400">Mesures</span>
-                            <span class="font-semibold">{{ $stats['metrics_count'] }}</span>
-                        </div>
-                    </div>
+                @if($user->id !== auth()->id())
+                    <a href="{{ route('messages.show', $user) }}"
+                       class="px-6 py-3 bg-rose-500 hover:bg-rose-600 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-lg shadow-rose-500/25 transition-all active:scale-95">
+                        Message
+                    </a>
+                @else
+                    <a href="{{ route('profile.edit') }}"
+                       class="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl font-black uppercase italic text-xs tracking-widest transition-all">
+                        Modifier
+                    </a>
+                @endif
+            </div>
+
+            {{-- Nom + bio --}}
+            <div>
+                <h1 class="text-3xl font-black italic uppercase tracking-tighter leading-none">{{ $user->name }}</h1>
+                @if($user->bio)
+                    <p class="text-slate-400 text-sm leading-relaxed mt-2 italic">"{{ $user->bio }}"</p>
+                @endif
+            </div>
+
+            {{-- Stats rapides --}}
+            <div class="grid grid-cols-3 gap-3">
+                <div class="bg-[#111214] border border-white/5 p-4 rounded-[2rem] text-center">
+                    <p class="text-2xl font-black text-rose-500">{{ $stats['total_workouts'] }}</p>
+                    <p class="text-[9px] font-bold uppercase text-slate-600 mt-1 tracking-widest">Séances</p>
+                </div>
+                <div class="bg-[#111214] border border-white/5 p-4 rounded-[2rem] text-center">
+                    <p class="text-2xl font-black text-amber-400">{{ $stats['xp'] }}</p>
+                    <p class="text-[9px] font-bold uppercase text-slate-600 mt-1 tracking-widest">XP</p>
+                </div>
+                <div class="bg-[#111214] border border-white/5 p-4 rounded-[2rem] text-center">
+                    <p class="text-2xl font-black text-blue-400">{{ $stats['streak'] }}</p>
+                    <p class="text-[9px] font-bold uppercase text-slate-600 mt-1 tracking-widest">Streak</p>
                 </div>
             </div>
 
-            <!-- Contenu principal -->
-            <div class="flex-1 space-y-6">
-                <!-- Badges débloqués -->
-                <div class="bg-slate-800 rounded-xl p-6">
-                    <h2 class="text-xl font-semibold mb-4">🏆 Badges ({{ $earnedBadges->count() }})</h2>
-
-                    @if($earnedBadges->count() > 0)
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        @foreach($earnedBadges as $badge)
-                        <div class="bg-slate-700 rounded-lg p-4 text-center hover:scale-105 transition cursor-pointer group relative"
-                             title="{{ $badge->description }}">
-                            <div class="text-4xl mb-2">{{ $badge->icon }}</div>
-                            <p class="font-semibold text-sm">{{ $badge->name }}</p>
-                            <span class="text-xs px-2 py-1 rounded-full mt-2 inline-block
-                                @if($badge->rarity === 'legendary') bg-yellow-500/20 text-yellow-400
-                                @elseif($badge->rarity === 'epic') bg-purple-500/20 text-purple-400
-                                @elseif($badge->rarity === 'rare') bg-blue-500/20 text-blue-400
-                                @else bg-slate-500/20 text-slate-400 @endif">
-                                {{ ucfirst($badge->rarity) }}
-                            </span>
-
-                            <!-- Tooltip -->
-                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-900 p-3 rounded-lg text-xs hidden group-hover:block z-10 border border-slate-700">
-                                <p class="font-semibold mb-1">{{ $badge->description }}</p>
-                                <p class="text-yellow-400">+{{ $badge->xp_reward }} XP</p>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
+            {{-- Barre de progression XP --}}
+            @php
+                $xp = $stats['xp'];
+                $ranks = [
+                    ['label' => 'NOVICE', 'xp' => 0],
+                    ['label' => 'ESPOIR', 'xp' => 100],
+                    ['label' => 'PRO', 'xp' => 500],
+                    ['label' => 'ÉLITE', 'xp' => 1000],
+                ];
+                $currentRankIdx = 0;
+                $nextRank = null;
+                foreach ($ranks as $i => $r) {
+                    if ($xp >= $r['xp']) { $currentRankIdx = $i; }
+                    elseif (!$nextRank) { $nextRank = $r; }
+                }
+                $prevXp = $ranks[$currentRankIdx]['xp'];
+                $nextXp = $nextRank['xp'] ?? $prevXp + 1000;
+                $progress = $nextRank ? min(100, (($xp - $prevXp) / ($nextXp - $prevXp)) * 100) : 100;
+            @endphp
+            <div class="bg-[#111214] border border-white/5 p-5 rounded-[2rem]">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-500">Progression</span>
+                    @if($nextRank)
+                        <span class="text-[10px] font-black text-slate-400">{{ $xp }} / {{ $nextRank['xp'] }} XP → {{ $nextRank['label'] }}</span>
                     @else
-                    <p class="text-slate-400 text-center py-8">Aucun badge débloqué pour le moment. Commence à t'entraîner ! 💪</p>
+                        <span class="text-[10px] font-black text-amber-400">RANG MAX 👑</span>
                     @endif
                 </div>
-
-                <!-- Badges verrouillés -->
-                @if($lockedBadges->count() > 0)
-                <div class="bg-slate-800 rounded-xl p-6">
-                    <h2 class="text-xl font-semibold mb-4">🔒 Badges à débloquer</h2>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 opacity-50">
-                        @foreach($lockedBadges as $badge)
-                        <div class="bg-slate-700 rounded-lg p-4 text-center">
-                            <div class="text-4xl mb-2 grayscale">🚫</div>
-                            <p class="font-semibold text-sm">{{ $badge->name }}</p>
-                            <span class="text-xs text-slate-400">{{ $badge->condition_description ?? 'Condition à définir' }}</span>
-                        </div>
-                        @endforeach
-                    </div>
+                <div class="h-2 w-full bg-black rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.4)] transition-all duration-700"
+                         style="width: {{ $progress }}%"></div>
                 </div>
-                @endif
-
-                <!-- Progression Bar -->
-                <div class="bg-slate-800 rounded-xl p-6">
-                    <h2 class="text-xl font-semibold mb-4">📈 Progression vers le prochain rang</h2>
-                    @php
-                    $nextRank = null;
-                    $ranks = [
-                        ['label' => 'NOVICE', 'xp' => 0],
-                        ['label' => 'ESPOIR', 'xp' => 100],
-                        ['label' => 'PRO', 'xp' => 500],
-                        ['label' => 'ÉLITE', 'xp' => 1000],
-                        ['label' => 'CHAMPION', 'xp' => 2500],
-                    ];
-
-                    $currentRankIndex = 0;
-                    $nextRank = null;
-
-                    foreach ($ranks as $index => $rank) {
-                        if ($stats['xp'] >= $rank['xp']) {
-                            $currentRankIndex = $index;
-                        } else {
-                            $nextRank = $rank;
-                            break;
-                        }
-                    }
-
-                    if (!$nextRank && count($ranks) > $currentRankIndex + 1) {
-                        $nextRank = $ranks[$currentRankIndex + 1];
-                    }
-
-                    $currentXp = $stats['xp'];
-                    $prevXp = $ranks[$currentRankIndex]['xp'];
-                    $nextXp = $nextRank['xp'] ?? $ranks[$currentRankIndex]['xp'] + 500;
-                    $progress = $nextRank ? (($currentXp - $prevXp) / ($nextXp - $prevXp)) * 100 : 100;
-                    @endphp
-
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm text-slate-400">{{ $ranks[$currentRankIndex]['label'] }}</span>
-                        @if($nextRank)
-                        <span class="text-sm text-slate-400">{{ $nextRank['label'] }}</span>
-                        @endif
-                    </div>
-                    <div class="h-4 bg-slate-700 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500" style="width: {{ $progress }}%"></div>
-                    </div>
-                    <p class="text-center mt-2 text-sm">
-                        <span class="font-bold">{{ number_format($currentXp) }}</span> XP
-                        @if($nextRank)
-                        / {{ number_format($nextXp) }} XP pour le prochain rang
-                        @else
-                        - MAX RANK ! 🎉
-                        @endif
-                    </p>
-                </div>
-
-                <!-- Badges par rarity -->
-                @php
-                $rarities = ['legendary', 'epic', 'rare', 'common'];
-                @endphp
-
-                @foreach($rarities as $rarity)
-                @php
-                $rarityBadges = $earnedBadges->where('rarity', $rarity);
-                @endphp
-                @if($rarityBadges->count() > 0)
-                <div class="bg-slate-800 rounded-xl p-6">
-                    <h2 class="text-xl font-semibold mb-4 capitalize">
-                        @if($rarity === 'legendary') 🏅 Légendaires
-                        @elseif($rarity === 'epic') 💜 Épiques
-                        @elseif($rarity === 'rare') 💎 Rares
-                        @else ⚪ Communs
-                        @endif
-                    </h2>
-                    <div class="flex flex-wrap gap-3">
-                        @foreach($rarityBadges as $badge)
-                        <div class="flex items-center gap-2 bg-slate-700 rounded-full px-4 py-2">
-                            <span class="text-2xl">{{ $badge->icon }}</span>
-                            <span class="font-medium">{{ $badge->name }}</span>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-                @endforeach
             </div>
+
+            {{-- Badges débloqués --}}
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600">
+                        Badges ({{ $earnedBadges->count() }})
+                    </h2>
+                </div>
+
+                @if($earnedBadges->count() > 0)
+                    <div class="grid grid-cols-2 gap-3">
+                        @foreach($earnedBadges as $badge)
+                            <div class="bg-[#111214] border p-4 rounded-[2rem] flex items-center gap-3
+                                {{ $badge->rarity === 'legendary' ? 'border-amber-500/30 bg-amber-500/5' :
+                                   ($badge->rarity === 'epic' ? 'border-purple-500/30 bg-purple-500/5' :
+                                   ($badge->rarity === 'rare' ? 'border-blue-500/30 bg-blue-500/5' : 'border-slate-700')) }}">
+                                <span class="text-3xl flex-shrink-0">{{ $badge->icon }}</span>
+                                <div class="min-w-0">
+                                    <p class="font-black text-sm truncate">{{ $badge->name }}</p>
+                                    <span class="text-[9px] font-bold uppercase
+                                        {{ $badge->rarity === 'legendary' ? 'text-amber-400' :
+                                           ($badge->rarity === 'epic' ? 'text-purple-400' :
+                                           ($badge->rarity === 'rare' ? 'text-blue-400' : 'text-slate-500')) }}">
+                                        {{ ucfirst($badge->rarity) }}
+                                    </span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="bg-[#111214] border border-slate-800 rounded-[2rem] p-8 text-center">
+                        <p class="text-slate-500 font-bold uppercase text-sm">Aucun badge encore</p>
+                        <p class="text-slate-700 text-xs mt-1">Continue à t'entraîner pour en débloquer !</p>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Badges à débloquer --}}
+            @if($lockedBadges->count() > 0)
+                <div>
+                    <h2 class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700 mb-4">
+                        À débloquer ({{ $lockedBadges->count() }})
+                    </h2>
+                    <div class="grid grid-cols-2 gap-3 opacity-40">
+                        @foreach($lockedBadges as $badge)
+                            <div class="bg-[#111214] border border-slate-800 p-4 rounded-[2rem] flex items-center gap-3">
+                                <span class="text-3xl flex-shrink-0 grayscale">{{ $badge['icon'] }}</span>
+                                <div class="min-w-0">
+                                    <p class="font-black text-sm truncate">{{ $badge['name'] }}</p>
+                                    <p class="text-[9px] text-slate-600 font-bold truncate">{{ $badge['description'] }}</p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- Stats détaillées --}}
+            <div class="bg-[#111214] border border-white/5 p-6 rounded-[2.5rem]">
+                <h3 class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-600 mb-4">Performances</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800">
+                        <span class="text-sm font-bold text-slate-400">Volume total</span>
+                        <span class="font-black">{{ $stats['total_volume_tons'] }}<span class="text-xs text-slate-600 ml-1">tonnes</span></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800">
+                        <span class="text-sm font-bold text-slate-400">Max soulevé</span>
+                        <span class="font-black">{{ $stats['max_weight'] }}<span class="text-xs text-slate-600 ml-1">kg</span></span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-800">
+                        <span class="text-sm font-bold text-slate-400">Photos progrès</span>
+                        <span class="font-black">{{ $stats['photos_count'] }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-sm font-bold text-slate-400">Mesures corporelles</span>
+                        <span class="font-black">{{ $stats['metrics_count'] }}</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
-</div>
-@endsection
+</x-app-layout>

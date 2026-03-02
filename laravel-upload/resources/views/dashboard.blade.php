@@ -140,20 +140,33 @@
 
                 <div class="space-y-3">
                     @forelse($recentWorkouts as $workout)
-                    <div class="bg-[#111214] border border-slate-800/50 p-5 rounded-3xl flex items-center justify-between group hover:bg-slate-900 transition">
+                    <a href="{{ route('workouts.show', $workout) }}"
+                       class="bg-[#111214] border border-slate-800/50 p-5 rounded-3xl flex items-center justify-between group hover:border-rose-500/30 hover:bg-slate-900/50 transition-all duration-300 block">
                         <div class="flex items-center gap-4">
                             <div class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center font-black text-rose-500 text-xs">
                                 {{ $workout->created_at->format('d') }}
                             </div>
                             <div>
-                                <h4 class="font-black uppercase text-sm group-hover:text-rose-500 transition">{{ $workout->title }}</h4>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-black uppercase text-sm group-hover:text-rose-500 transition-colors">{{ $workout->title }}</h4>
+                                    @if($workout->status === 'completed')
+                                        <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                                    @elseif($workout->status === 'in_progress')
+                                        <span class="text-[8px] font-black text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md uppercase">En cours</span>
+                                    @endif
+                                </div>
                                 <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{{ $workout->created_at->diffForHumans() }}</p>
                             </div>
                         </div>
-                        <svg class="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
-                    </div>
+                        <svg class="w-5 h-5 text-slate-700 group-hover:text-rose-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
+                    </a>
                     @empty
-                    <p class="center text-slate-600 font-bold uppercase text-[10px] py-10 tracking-[0.2em]">Aucune seance enregistree</p>
+                    <div class="bg-[#111214] border border-slate-800 rounded-3xl p-10 text-center">
+                        <p class="text-slate-600 font-bold uppercase text-[10px] tracking-[0.2em]">Aucune séance enregistrée</p>
+                        <a href="{{ route('workouts.index') }}" class="inline-block mt-4 px-5 py-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-black uppercase rounded-xl hover:bg-rose-500 hover:text-white transition-all">
+                            Commencer
+                        </a>
+                    </div>
                     @endforelse
                 </div>
             </div>

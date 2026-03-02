@@ -86,11 +86,18 @@
 
         </div>
 
-        <!-- Navigation -->
-        <div class="fixed bottom-0 left-0 right-0 bg-[#08090a]/95 backdrop-blur-xl border-t border-slate-800 px-6 py-4">
-            <a href="{{ route('dashboard') }}" class="flex items-center justify-center gap-2 w-full bg-white text-black py-4 rounded-[2rem] font-black uppercase tracking-[0.2em] hover:bg-rose-500 hover:text-white transition-all">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                Retour au Dashboard
+        {{-- Liens rapides --}}
+        <div class="grid grid-cols-2 gap-3">
+            <a href="{{ route('evolution.index') }}"
+               class="flex items-center justify-center gap-2 py-4 bg-[#111214] border border-slate-800 rounded-2xl font-black text-xs uppercase tracking-wider text-slate-400 hover:border-rose-500/50 hover:text-rose-500 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                Évolution
+            </a>
+            <a href="{{ route('evolution.personal-bests') }}"
+               class="flex items-center justify-center gap-2 py-4 bg-[#111214] border border-slate-800 rounded-2xl font-black text-xs uppercase tracking-wider text-slate-400 hover:border-rose-500/50 hover:text-rose-500 transition-all"
+               id="pb-link">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                Records Perso
             </a>
         </div>
     </div>
